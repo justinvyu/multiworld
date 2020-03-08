@@ -11,34 +11,25 @@ def register_pygame_envs():
         return
     REGISTERED = True
     LOGGER.info("Registering multiworld pygame gym environments")
+
+    # === 2D Point Mass (No Walls) ===
     register(
-        id='Point2DLargeEnv-offscreen-v0',
+        id='Point2DFixed-v0',
         entry_point='multiworld.envs.pygame.point2d:Point2DEnv',
-        tags={
-            'git-commit-hash': '166f0f3',
-            'author': 'Vitchyr'
-        },
         kwargs={
-            'images_are_rgb': True,
-            'target_radius': 1,
-            'ball_radius': 1,
-            'render_onscreen': False,
+            'randomize_position_on_reset': False,
         },
     )
     register(
-        id='Point2DLargeEnv-onscreen-v0',
+        id='Point2DRandomGoal-v0',
         entry_point='multiworld.envs.pygame.point2d:Point2DEnv',
-        tags={
-            'git-commit-hash': '166f0f3',
-            'author': 'Vitchyr'
-        },
         kwargs={
-            'images_are_rgb': True,
-            'target_radius': 1,
-            'ball_radius': 1,
-            'render_onscreen': True,
+            'randomize_position_on_reset': True,
         },
     )
+
+    
+    # === 2D Point Mass (With Walls) ===
     register(
         id='Point2D-Box-Wall-v1',
         entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
@@ -90,6 +81,8 @@ def register_pygame_envs():
             'render_target': True,
         },
     )
+
+    # === Point Mass Image Environments ===
     register(
         id='Point2DEnv-ImageFixedGoal-v0',
         entry_point=point2d_image_fixed_goal_v0,
@@ -131,9 +124,9 @@ def point2d_image_v0(**kwargs):
     env = Point2DEnv(
         images_are_rgb=True,
         render_onscreen=False,
-        show_goal=False,
-        ball_radius=2,
-        render_size=8,
+        show_goal=True,
+        ball_radius=1,
+        render_size=100,
     )
     env = ImageEnv(env, imsize=env.render_size, transpose=True)
     return env

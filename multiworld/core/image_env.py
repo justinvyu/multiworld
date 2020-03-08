@@ -48,6 +48,8 @@ class ImageEnv(ProxyEnv, MultitaskEnv):
         use an ImageEnv to pre-sample a bunch of goals.
         """
         self.quick_init(locals())
+        assert hasattr(wrapped_env, 'get_image'), (
+            'Wrapped environment needs to implement `get_image` method')
         super().__init__(wrapped_env)
         self.wrapped_env.hide_goal_markers = True
         self.imsize = imsize
