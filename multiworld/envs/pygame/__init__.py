@@ -16,19 +16,8 @@ def register_pygame_envs():
     register(
         id='Point2DFixed-v0',
         entry_point='multiworld.envs.pygame.point2d:Point2DEnv',
-        kwargs={
-            'randomize_position_on_reset': False,
-        },
-    )
-    register(
-        id='Point2DRandomGoal-v0',
-        entry_point='multiworld.envs.pygame.point2d:Point2DEnv',
-        kwargs={
-            'randomize_position_on_reset': True,
-        },
     )
 
-    
     # === 2D Point Mass (With Walls) ===
     register(
         id='Point2D-Box-Wall-v1',

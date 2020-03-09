@@ -335,10 +335,12 @@ class Point2DEnv(MultitaskEnv, Serializable):
             )
         drawer.render()
 
-    def render(self, mode='human', close=False):
+    def render(self, mode='human', width=None, height=None, close=False):
         if close:
             self.render_drawer = None
             return
+        if mode =='rgb_array':
+            return self.get_image(width=width, height=height)
 
         if self.render_drawer is None or self.render_drawer.terminated:
             self.render_drawer = PygameViewer(
