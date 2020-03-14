@@ -20,6 +20,20 @@ def register_pygame_envs():
 
     # === 2D Point Mass (With Walls) ===
     register(
+        id='Point2DSingleWall-v0',
+        entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
+        kwargs={
+            'action_scale': 1.,
+            'wall_shape': '--',
+            'wall_thickness': 2.0,
+            'render_onscreen': True,
+            'images_are_rgb': True,
+            'render_target': True,
+            'inner_wall_max_dist': 2,
+        },
+    )
+
+    register(
         id='Point2D-Box-Wall-v1',
         entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
         tags={
@@ -30,7 +44,7 @@ def register_pygame_envs():
             'action_scale': 1.,
             'wall_shape': 'box',
             'wall_thickness': 2.0,
-            'render_size': 84,
+            # 'render_size': 84,
             'render_onscreen': True,
             'images_are_rgb': True,
             'render_target': True,

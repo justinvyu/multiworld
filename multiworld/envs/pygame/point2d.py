@@ -25,7 +25,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             render_dt_msec=0,
             action_l2norm_penalty=0,  # disabled for now
             render_onscreen=False,
-            render_size=84,
+            render_size=256,
             reward_type="dense",
             action_scale=1.0,
             target_radius=0.5,
@@ -619,18 +619,19 @@ if __name__ == "__main__":
     import multiworld
     multiworld.register_all_envs()
 
+    # e = gym.make('Point2DFixed-v0')
+    e = gym.make('Point2DSingleWall-v0')
+
     # e = gym.make('Point2D-Box-Wall-v1')
     # e = gym.make('Point2D-Big-UWall-v1')
     # e = gym.make('Point2D-Easy-UWall-v1')
     # e = gym.make('Point2DEnv-Image-v0')
-    e = gym.make('Point2DLargeEnv-offscreen-v0')
 
-    for i in range(1000):
+    for i in range(100):
         e.reset()
-        for j in range(5):
+        for j in range(100):
             obs, rew, done, info = e.step(e.action_space.sample())
-            import ipdb; ipdb.set_trace()
-            # e.render()
+            e.render()
             # img = e.get_image()
             # plt.imshow(img)
             # plt.show()
