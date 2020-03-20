@@ -269,10 +269,14 @@ class Point2DEnv(MultitaskEnv, Serializable):
             self.drawer = PygameViewer(
                 screen_width=width,
                 screen_height=height,
-                x_bounds=(-self.boundary_dist - self.ball_radius,
-                          self.boundary_dist + self.ball_radius),
-                y_bounds=(-self.boundary_dist - self.ball_radius,
-                          self.boundary_dist + self.ball_radius),
+                # x_bounds=(-self.boundary_dist - self.ball_radius,
+                #           self.boundary_dist + self.ball_radius),
+                # y_bounds=(-self.boundary_dist - self.ball_radius,
+                #           self.boundary_dist + self.ball_radius),
+                x_bounds=(-self.boundary_dist,
+                          self.boundary_dist),
+                y_bounds=(-self.boundary_dist,
+                          self.boundary_dist),
                 render_onscreen=self.render_onscreen,
             )
         self.draw(self.drawer)
@@ -346,10 +350,14 @@ class Point2DEnv(MultitaskEnv, Serializable):
             self.render_drawer = PygameViewer(
                 self.render_size,
                 self.render_size,
-                x_bounds=(-self.boundary_dist-self.ball_radius,
-                          self.boundary_dist+self.ball_radius),
-                y_bounds=(-self.boundary_dist-self.ball_radius,
-                          self.boundary_dist+self.ball_radius),
+                # x_bounds=(-self.boundary_dist-self.ball_radius,
+                #           self.boundary_dist+self.ball_radius),
+                # y_bounds=(-self.boundary_dist-self.ball_radius,
+                #           self.boundary_dist+self.ball_radius),
+                x_bounds=(-self.boundary_dist,
+                          self.boundary_dist),
+                y_bounds=(-self.boundary_dist,
+                          self.boundary_dist),
                 render_onscreen=True,
             )
         self.draw(self.render_drawer)
@@ -476,13 +484,12 @@ class Point2DEnv(MultitaskEnv, Serializable):
     def initialize_camera(self, init_fctn):
         pass
 
-
 class Point2DWallEnv(Point2DEnv):
     """Point2D with walls"""
 
     def __init__(
             self,
-            wall_shape="",
+            wall_shape=None,
             wall_thickness=1.0,
             inner_wall_max_dist=1,
             **kwargs
@@ -492,8 +499,9 @@ class Point2DWallEnv(Point2DEnv):
         self.inner_wall_max_dist = inner_wall_max_dist
         self.wall_shape = wall_shape
         self.wall_thickness = wall_thickness
-        if wall_shape == "u":
-            self.walls = [
+
+        WALL_FORMATIONS = {
+            "u": [
                 # Right wall
                 VerticalWall(
                     self.ball_radius,
@@ -515,27 +523,24 @@ class Point2DWallEnv(Point2DEnv):
                     -self.inner_wall_max_dist,
                     self.inner_wall_max_dist,
                 )
-            ]
-        if wall_shape == "-" or wall_shape == "h":
-            self.walls = [
+            ],
+            "-": [
                 HorizontalWall(
                     self.ball_radius,
                     self.inner_wall_max_dist,
                     -self.inner_wall_max_dist,
                     self.inner_wall_max_dist,
                 )
-            ]
-        if wall_shape == "--":
-            self.walls = [
+            ],
+            "--": [
                 HorizontalWall(
                     self.ball_radius,
                     0,
                     -self.inner_wall_max_dist,
                     self.inner_wall_max_dist,
                 )
-            ]
-        if wall_shape == "big-u":
-            self.walls = [
+            ],
+            "big-u": [
                 VerticalWall(
                     self.ball_radius,
                     self.inner_wall_max_dist*2,
@@ -559,9 +564,8 @@ class Point2DWallEnv(Point2DEnv):
                     self.inner_wall_max_dist*2,
                     self.wall_thickness
                 ),
-            ]
-        if wall_shape == "easy-u":
-            self.walls = [
+            ],
+            "easy-u": [
                 VerticalWall(
                     self.ball_radius,
                     self.inner_wall_max_dist*2,
@@ -585,9 +589,8 @@ class Point2DWallEnv(Point2DEnv):
                     self.inner_wall_max_dist*2,
                     self.wall_thickness
                 ),
-            ]
-        if wall_shape == "big-h":
-            self.walls = [
+            ],
+            "big-h": [
                 # Bottom wall
                 HorizontalWall(
                     self.ball_radius,
@@ -595,9 +598,8 @@ class Point2DWallEnv(Point2DEnv):
                     -self.inner_wall_max_dist*2,
                     self.inner_wall_max_dist*2,
                 ),
-            ]
-        if wall_shape == "box":
-            self.walls = [
+            ],
+            "box": [
                 # Bottom wall
                 VerticalWall(
                     self.ball_radius,
@@ -606,10 +608,65 @@ class Point2DWallEnv(Point2DEnv):
                     0,
                     self.wall_thickness
                 ),
-            ]
-        if wall_shape == "none":
-            self.walls = []
-
+            ],
+            "easy-maze": [
+                VerticalWall(
+                    self.ball_radius,
+                    0,
+                    -self.boundary_dist,
+                    self.inner_wall_max_dist,
+                ),
+            ],
+            "medium-maze": [
+                VerticalWall(
+                    self.ball_radius,
+                    -self.boundary_dist/3,
+                    -self.boundary_dist,
+                    self.inner_wall_max_dist,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    self.boundary_dist/3,
+                    -self.inner_wall_max_dist,
+                    self.boundary_dist
+                ),
+            ],
+            "hard-maze": [
+                HorizontalWall(
+                    self.ball_radius,
+                    -self.boundary_dist + self.inner_wall_max_dist,
+                    -self.boundary_dist,
+                    self.inner_wall_max_dist,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    self.inner_wall_max_dist,
+                    -self.boundary_dist + self.inner_wall_max_dist,
+                    self.boundary_dist - self.inner_wall_max_dist,
+                ),
+                HorizontalWall(
+                    self.ball_radius,
+                    self.boundary_dist - self.inner_wall_max_dist,
+                    -self.boundary_dist + self.inner_wall_max_dist,
+                    self.inner_wall_max_dist,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    -self.boundary_dist + self.inner_wall_max_dist,
+                    -self.boundary_dist + self.inner_wall_max_dist * 2,
+                    self.boundary_dist - self.inner_wall_max_dist,
+                ),
+                HorizontalWall(
+                    self.ball_radius,
+                    -self.boundary_dist + self.inner_wall_max_dist * 2,
+                    -self.boundary_dist + self.inner_wall_max_dist,
+                    0,
+                ),
+            ],
+            None: [],
+        }
+ 
+        self.walls = WALL_FORMATIONS.get(wall_shape, [])
 
 if __name__ == "__main__":
     import gym
