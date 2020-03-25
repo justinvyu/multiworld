@@ -3,8 +3,6 @@ from typing import Any, Dict, Optional, Sequence
 import os
 import numpy as np
 import collections
-import matplotlib
-matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 
 from gym import spaces
@@ -40,7 +38,7 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
         self._reset_object = reset_object
 
         # === Initialize action space ===
-        u = np.ones(3)
+        u = np.array([1, 1, np.pi])
         self.action_space = spaces.Box(-u, u, dtype=np.float32)
 
         # === Initialize observation spaces ===
@@ -67,6 +65,17 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
 
         # === Initialize reset ranges ===
         self._init_qpos_range = self._qpos_range
+        self.set_init_qpos_range(init_qpos_range)
+
+        self._init_object_pos_range = self._box_range
+        self.set_init_object_pos_range(init_object_pos_range)
+
+        self._target_pos_range = self._box_range
+        self.set_target_pos_range(target_pos_range)
+
+        self.reset()
+
+    def set_init_qpos_range(self, init_qpos_range):
         if init_qpos_range:
             if isinstance(init_qpos_range, tuple):
                 low, high = init_qpos_range
@@ -74,8 +83,10 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
                     np.array(low), np.array(high), dtype=np.float32)
             elif isinstance(init_qpos_range, list):
                 self._init_qpos_range = np.array(init_qpos_range)
+            elif isinstance(init_qpos_range, spaces.Box):
+                self._init_qpos_range = init_qpos_range
 
-        self._init_object_pos_range = self._box_range
+    def set_init_object_pos_range(self, init_object_pos_range):
         if init_object_pos_range:
             if isinstance(init_object_pos_range, tuple):
                 low, high = init_object_pos_range
@@ -83,8 +94,10 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
                     np.array(low), np.array(high), dtype=np.float32)
             elif isinstance(init_object_pos_range, list):
                 self._init_object_pos_range = np.array(init_object_pos_range)
+            elif isinstance(init_object_pos_range, spaces.Box):
+                self._init_object_pos_range = init_object_pos_range
 
-        self._target_pos_range = self._box_range
+    def set_target_pos_range(self, target_pos_range):
         if target_pos_range:
             if isinstance(target_pos_range, tuple):
                 low, high = target_pos_range
@@ -92,8 +105,12 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
                     np.array(low), np.array(high), dtype=np.float32)
             elif isinstance(target_pos_range, list):
                 self._target_pos_range = np.array(target_pos_range)
+            elif isinstance(target_pos_range, spaces.Box):
+                self._target_pos_range = target_pos_range
 
-        self.reset()
+    @property
+    def target_pos_range(self):
+        return self._target_pos_range
 
     def _sample_init_qpos(self):
         if isinstance(self._init_qpos_range, spaces.Box):
@@ -124,7 +141,7 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
             if self._reset_object or not self.reset_already:
                 object_pos = self._sample_init_object_pos()
             else:
-                object_pos = prev_obs['object_pos'] 
+                object_pos = prev_obs['object_pos']
 
             qpos = np.concatenate([init_qpos, object_pos])
             qvel = np.zeros(qpos.shape)
@@ -166,9 +183,14 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
     def step(self, action):
         self.do_simulation(action, self.frame_skip)
         obs = self._get_obs()
-        reward = self.compute_reward(action, obs) 
+        reward = self.compute_reward(action, obs)
         done = False
-        return obs, reward, done, {}
+        return obs, reward, done, {
+            'gripper_to_object_distance': np.linalg.norm(
+                obs['gripper_qpos'][:2] - obs['object_pos']),
+            'object_to_target_distance': np.linalg.norm(
+                obs['object_pos'] - obs['target_pos']),
+        }
 
     """
     MultitaskEnv interface
@@ -220,14 +242,15 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
         init_fn = self.camera_init_fn()
         init_fn(self.viewer.cam)
 
-    def render(self, width=256, height=256, mode='rgb_array'):
+    def render(self, mode='rgb_array', width=256, height=256):
         if mode == 'rgb_array':
             if not self.viewer:
-                env.initialize_camera(self.camera_init_fn()) 
+                self.initialize_camera(self.camera_init_fn())
+                self.viewer = True
             img = self.sim.render(width=width, height=height, mode='offscreen')
             return img
         elif mode == 'human':
-            super(PusherEnv, self).render(mode=mode) 
+            super(PusherEnv, self).render(mode=mode)
         else:
             raise NotImplementedError
 

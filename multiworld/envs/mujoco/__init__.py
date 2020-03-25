@@ -20,7 +20,7 @@ def register_mujoco_envs():
     """
     register(
         id='Pusher2DSimple-v0',
-        entry_point='multiworld.envs.mujoco.pusher2d_simple.PusherEnv',
+        entry_point='multiworld.envs.mujoco.pusher2d_simple:PusherEnv',
     )
 
     """
