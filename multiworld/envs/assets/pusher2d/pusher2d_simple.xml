@@ -8,7 +8,7 @@
     </default>
 
     <worldbody>
-        <light diffuse="1 1 1" dir="0 0 -1" pos="0 0 10" castshadow="false" />
+        <light diffuse="0.75 0.75 0.75" dir="0 0 -1" pos="0 0 10" castshadow="false" />
 
         <geom conaffinity="1" contype="1" condim="1" name="table" pos="0 0.5 -0.325" size="10 10 0.1" type="plane" rgba="1.0 1.0 1.0 1" />
 
@@ -35,7 +35,7 @@
         <body name="obj1" pos="0.0 -0. -0.325">
             <joint axis="1 0 0" damping="1.5" name="obj1_slidex" pos="0 0 0.05" range="-2 2" type="slide" />
             <joint axis="0 1 0" damping="1.5" name="obj1_slidey" pos="0 0 0.05" range="-2 2" type="slide" />
-            <geom conaffinity="1" contype="1" pos="0 0 0.05" density="0.001" size="0.05 0.05 0.05" rgba="1 0. 0.3 1" type="box" name="object" />
+            <geom conaffinity="1" contype="1" pos="0 0 0.05" density="0.001" size="0.05 0.05 0.05" rgba="0.95 0.1 0.2 1" type="box" name="object" />
         </body>
 
         <body name="target" pos="2. 0. -0.375">

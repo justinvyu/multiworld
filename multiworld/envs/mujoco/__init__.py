@@ -16,6 +16,14 @@ def register_mujoco_envs():
         sawyer_init_camera_zoomed_in
     )
     """
+    Pusher2D Task
+    """
+    register(
+        id='Pusher2DSimple-v0',
+        entry_point='multiworld.envs.mujoco.pusher2d_simple.PusherEnv',
+    )
+
+    """
     Reaching tasks
     """
 
