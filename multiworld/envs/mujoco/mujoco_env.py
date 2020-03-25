@@ -110,10 +110,10 @@ class MujocoEnv(gym.Env):
 
     def render(self, mode='human'):
         if mode == 'rgb_array':
-            self._get_viewer().render()
+            # self._get_viewer().render()
             # window size used for old mujoco-py:
             width, height = 500, 500
-            width, height = 4000, 4000
+            # width, height = 4000, 4000
             data = self._get_viewer().read_pixels(width, height, depth=False)
             # original image is upside-down, so flip it
             return data[::-1, :, :]

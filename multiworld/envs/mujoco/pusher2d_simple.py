@@ -22,15 +22,11 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
                  init_object_pos_range=None,
                  target_pos_range=None,
                  reset_gripper=True,
-                 reset_object=True,
-                 do_reset=True,
-                 multi_reset=False):
-        self.do_reset = do_reset
-        self.multi_reset = multi_reset
+                 reset_object=True):
 
         self._Serializable__initialize(locals())
         self.reset_already = False
-        self.goal_pos = np.array([2.0, 0.])
+        # self.goal_pos = np.array([2.0, 0.])
         MujocoEnv.__init__(self, model_path=self.MODEL_PATH, frame_skip=5)
         self.model.stat.extent = 10
 
@@ -38,7 +34,7 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
         self._reset_object = reset_object
 
         # === Initialize action space ===
-        u = np.array([1, 1, np.pi])
+        u = np.ones((3,)) / 2.
         self.action_space = spaces.Box(-u, u, dtype=np.float32)
 
         # === Initialize observation spaces ===
@@ -254,17 +250,29 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
         else:
             raise NotImplementedError
 
-# env = PusherEnv()
+env = PusherEnv()
 
-if __name__ == "__main__":
-    env = PusherEnv(reset_gripper=False, reset_object=False)
-    for _ in range(100):
-        env.reset()
-        for _ in range(50):
-            env.step(np.random.uniform(-1, 1, size=3))
-            img = env.render(mode='human')
+# if __name__ == "__main__":
+#     env = PusherEnv(
+#         init_qpos_range=((-2.25, 0, 0), (-2.25, 0, 0)),
+#         # init_qpos_range=((-1.5, -1.5), (1.5, 1.5)),
+#         init_object_pos_range=[(1, 0)],
+#         target_pos_range=((1.5, 1.5), (2, 2)),
+#         # target_pos_range=[(2, 2), (2, -2)],
+#         reset_gripper=True,
+#         reset_object=True)
 
-            # img = env.render(mode='rgb_array')
-            # plt.imshow(img)
-            # plt.show()
+#     # act = 0
+#     for _ in range(100):
+#         env.reset()
+#         for _ in range(50):
+#             # env.step(np.array([act, 0, 0]))
+#             obs, rew, done, info = env.step(env.action_space.sample())
+#             print(rew, obs)
+#             img = env.render(mode='human')
+#         # print(act, env._get_obs()['gripper_qpos'])
+#         # act += 0.1
+#             # img = env.render(mode='rgb_array')
+#             # plt.imshow(img)
+#             # plt.show()
 
