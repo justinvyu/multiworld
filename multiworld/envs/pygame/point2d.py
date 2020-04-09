@@ -38,6 +38,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             show_goal=True,
             n_bins=10,
             use_count_reward=False,
+            show_discrete_grid=False,
             **kwargs
     ):
         if walls is None:
@@ -60,6 +61,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
         self.walls = walls
         self.n_bins = n_bins
         self.use_count_reward = use_count_reward
+        self.show_discrete_grid = show_discrete_grid
         self.images_are_rgb = images_are_rgb
         self.show_goal = show_goal
 
@@ -195,9 +197,12 @@ class Point2DEnv(MultitaskEnv, Serializable):
         return np.array([x_d, y_d])
 
     def _get_obs(self):
+        pos_discrete = self._discretize_observation(self._position.copy())
+        pos_onehot = np.eye(self.n_bins + 1)[pos_discrete]
         return dict(
             observation=self._position.copy(),
-            discrete_observation=self._discretize_observation(self._position.copy()),
+            discrete_observation=pos_discrete,
+            onehot_observation=pos_onehot,
             desired_goal=self._target_position.copy(),
             achieved_goal=self._position.copy(),
             state_observation=self._position.copy(),
@@ -328,6 +333,19 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
     def draw(self, drawer):
         drawer.fill(Color('white'))
+
+        if self.show_discrete_grid:
+            for x in self.x_bins:
+                drawer.draw_segment(
+                    (x, -self.boundary_dist),
+                    (x, self.boundary_dist),
+                    Color(220,220,220,25), aa=False)
+            for y in self.y_bins:
+                drawer.draw_segment(
+                    (-self.boundary_dist, y),
+                    (self.boundary_dist, y),
+                    Color(220,220,220,25), aa=False)
+
         if self.show_goal:
             drawer.draw_solid_circle(
                 self._target_position,
