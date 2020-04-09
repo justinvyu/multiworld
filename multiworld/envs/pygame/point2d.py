@@ -32,12 +32,12 @@ class Point2DEnv(MultitaskEnv, Serializable):
             boundary_dist=4,
             ball_radius=0.5,
             walls=None,
-            # fixed_goal=None,
             init_pos_range=None,
             target_pos_range=None,
-            # randomize_position_on_reset=True,
             images_are_rgb=False,  # else black and white
             show_goal=True,
+            n_bins=10,
+            use_count_reward=False,
             **kwargs
     ):
         if walls is None:
@@ -58,10 +58,14 @@ class Point2DEnv(MultitaskEnv, Serializable):
         self.boundary_dist = boundary_dist
         self.ball_radius = ball_radius
         self.walls = walls
-        # self.fixed_goal = fixed_goal
-        # self.randomize_position_on_reset = randomize_position_on_reset
+        self.n_bins = n_bins
+        self.use_count_reward = use_count_reward
         self.images_are_rgb = images_are_rgb
         self.show_goal = show_goal
+
+        self.x_bins = np.linspace(-self.boundary_dist, self.boundary_dist, self.n_bins)
+        self.y_bins = np.linspace(-self.boundary_dist, self.boundary_dist, self.n_bins)
+        self.bin_counts = np.ones((self.n_bins + 1, self.n_bins + 1))
 
         self.max_target_distance = self.boundary_dist - self.target_radius
 
@@ -77,7 +81,6 @@ class Point2DEnv(MultitaskEnv, Serializable):
         if not init_pos_range:
             self.init_pos_range = self.obs_range
         else:
-            # TODO: Add assertions
             assert np.all(np.abs(init_pos_range) < boundary_dist), (f"Init position must be"
                 "within the boundaries of the environment: ({-boundary_dist}, {boundary_dist})")
             low, high = init_pos_range
@@ -141,6 +144,9 @@ class Point2DEnv(MultitaskEnv, Serializable):
         is_success = distance_to_target < self.target_radius
 
         ob = self._get_obs()
+        x_d, y_d = ob['discrete_observation']
+        self.bin_counts[x_d, y_d] += 1
+
         reward = self.compute_reward(velocities, ob)
         info = {
             'radius': self.target_radius,
@@ -180,9 +186,18 @@ class Point2DEnv(MultitaskEnv, Serializable):
             pos = np.random.uniform(low, high)
         return pos
 
+    def clear_bin_counts(self):
+        self.bin_counts = np.ones((self.n_bins + 1, self.n_bins + 1))
+        
+    def _discretize_observation(self, pos):
+        x, y = pos
+        x_d, y_d = np.digitize(x, self.x_bins), np.digitize(y, self.y_bins)
+        return np.array([x_d, y_d])
+
     def _get_obs(self):
         return dict(
             observation=self._position.copy(),
+            discrete_observation=self._discretize_observation(self._position.copy()),
             desired_goal=self._target_position.copy(),
             achieved_goal=self._position.copy(),
             state_observation=self._position.copy(),
@@ -195,13 +210,20 @@ class Point2DEnv(MultitaskEnv, Serializable):
         desired_goals = obs['state_desired_goal']
         d = np.linalg.norm(achieved_goals - desired_goals, axis=-1)
         if self.reward_type == "sparse":
-            return -(d > self.target_radius).astype(np.float32)
+            r = -(d > self.target_radius).astype(np.float32)
         elif self.reward_type == "dense":
-            return -d
+            r = -d
         elif self.reward_type == "vectorized_dense":
-            return -np.abs(achieved_goals - desired_goals)
+            r = -np.abs(achieved_goals - desired_goals)
         else:
             raise NotImplementedError()
+        
+        if self.use_count_reward:
+            # TODO: Add different count based strategies
+            x_d, y_d = obs['discrete_observation']
+            r += 1 / np.sqrt(self.bin_counts[x_d, y_d])
+
+        return r
 
     def get_diagnostics(self, paths, prefix=''):
         statistics = OrderedDict()
@@ -489,7 +511,7 @@ class Point2DWallEnv(Point2DEnv):
 
     def __init__(
             self,
-            wall_shape=None,
+            wall_shape="hard-maze",
             wall_thickness=1.0,
             inner_wall_max_dist=1,
             **kwargs
@@ -676,8 +698,8 @@ if __name__ == "__main__":
     import multiworld
     multiworld.register_all_envs()
 
-    # e = gym.make('Point2DFixed-v0')
-    e = gym.make('Point2DSingleWall-v0')
+    e = gym.make('Point2DFixed-v0')
+    # e = gym.make('Point2DSingleWall-v0')
 
     # e = gym.make('Point2D-Box-Wall-v1')
     # e = gym.make('Point2D-Big-UWall-v1')
@@ -692,3 +714,4 @@ if __name__ == "__main__":
             # img = e.get_image()
             # plt.imshow(img)
             # plt.show()
+            print(rew)
