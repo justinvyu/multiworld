@@ -188,7 +188,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
     def clear_bin_counts(self):
         self.bin_counts = np.ones((self.n_bins + 1, self.n_bins + 1))
-        
+
     def _discretize_observation(self, pos):
         x, y = pos
         x_d, y_d = np.digitize(x, self.x_bins), np.digitize(y, self.y_bins)
@@ -215,13 +215,15 @@ class Point2DEnv(MultitaskEnv, Serializable):
             r = -d
         elif self.reward_type == "vectorized_dense":
             r = -np.abs(achieved_goals - desired_goals)
+        elif self.reward_type == "none":
+            r = np.zeros(d.shape)
         else:
             raise NotImplementedError()
-        
+
         if self.use_count_reward:
             # TODO: Add different count based strategies
-            x_d, y_d = obs['discrete_observation']
-            r += 1 / np.sqrt(self.bin_counts[x_d, y_d])
+            pos_d = obs['discrete_observation']
+            r += 1 / np.sqrt(self.bin_counts[pos_d[:, 0], pos_d[:, 1]])
 
         return r
 
