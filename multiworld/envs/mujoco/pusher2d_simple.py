@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 from gym import spaces
 import multiworld
 from multiworld.core.multitask_env import MultitaskEnv
-from multiworld.envs.mujoco.mujoco_env import MujocoEnv
+from gym.envs.mujoco.mujoco_env import MujocoEnv
 from serializable import Serializable
+
 
 class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
 
@@ -26,7 +27,7 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
 
         self._Serializable__initialize(locals())
         self.reset_already = False
-        # self.goal_pos = np.array([2.0, 0.])
+        self.goal_pos = np.array([0., 0.])
         MujocoEnv.__init__(self, model_path=self.MODEL_PATH, frame_skip=5)
         self.model.stat.extent = 10
 
@@ -39,34 +40,41 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
 
         # === Initialize observation spaces ===
         boundary_dist = 2.0
-        self._qpos_range = spaces.Box(
+        qpos_range = spaces.Box(
             low=np.array([-boundary_dist, -boundary_dist, -np.pi]),
             high=np.array([boundary_dist, boundary_dist, np.pi]),
             dtype=np.float32)
-        self._qvel_range = spaces.Box(
+        qvel_range = spaces.Box(
             low=-np.inf,
             high=np.inf,
-            shape=self._qpos_range.shape,
+            shape=qpos_range.shape,
             dtype=np.float32)
-        self._box_range = spaces.Box(
+        box_range = spaces.Box(
             low=np.array([-boundary_dist, -boundary_dist]),
             high=np.array([boundary_dist, boundary_dist]),
             dtype=np.float32)
-        self.observation_space = spaces.Dict([
-            ('gripper_qpos', self._qpos_range),
-            ('gripper_qvel', self._qvel_range),
-            ('object_pos', self._box_range),
-            ('target_pos', self._box_range),
-        ])
+        object_vel_range = spaces.Box(
+            low=-np.inf,
+            high=np.inf,
+            shape=box_range.shape,
+            dtype=np.float32)
+
+        # self.observation_space = spaces.Dict([
+        #     ('gripper_qpos', qpos_range),
+        #     ('gripper_qvel', qvel_range),
+        #     ('object_pos', box_range),
+        #     ('object_vel', object_vel_range),
+        #     ('target_pos', box_range),
+        # ])
 
         # === Initialize reset ranges ===
-        self._init_qpos_range = self._qpos_range
+        self._init_qpos_range = qpos_range
         self.set_init_qpos_range(init_qpos_range)
 
-        self._init_object_pos_range = self._box_range
+        self._init_object_pos_range = box_range
         self.set_init_object_pos_range(init_object_pos_range)
 
-        self._target_pos_range = self._box_range
+        self._target_pos_range = box_range
         self.set_target_pos_range(target_pos_range)
 
         self.reset()
@@ -154,39 +162,42 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
 
     def _get_obs(self) -> Dict[str, np.ndarray]:
         data = self.sim.data
-        # TODO: Restrict the hinge angle to -np.pi, np.pi
-        gripper_qpos = np.array([
-            data.get_joint_qpos('wrist_slidex'), # x coord
-            data.get_joint_qpos('wrist_slidey'), # y coord
-            data.get_joint_qpos('wrist_hinge')   # angle
-        ])
-        gripper_qvel = np.array([
-            data.get_joint_qvel('wrist_slidex'), # x coord
-            data.get_joint_qvel('wrist_slidey'), # y coord
-            data.get_joint_qvel('wrist_hinge')   # angle
-        ])
-        object_pos = data.get_geom_xpos('object')[:2]
         obs = collections.OrderedDict((
-            ('gripper_qpos', gripper_qpos),
-            ('gripper_qvel', gripper_qvel),
-            ('object_pos', object_pos),
-            ('target_pos', self.goal_pos),
-            ('state_achieved_goal', object_pos.copy()),
+            ('gripper_qpos', np.array(data.qpos.flat[:3])),
+            ('gripper_qvel', np.array(data.qvel.flat[:3])),
+            ('object_pos', np.array(data.geom_xpos[-2:-1, :2].flat)),
+            ('object_vel', np.array(data.qvel.flat[3:])),
+            ('target_pos', self.goal_pos.copy()),
+            ('state_achieved_goal', np.array(data.geom_xpos[-2:-1, :2].flat)),
             ('state_desired_goal', self.goal_pos.copy()),
         ))
         return obs
 
     def step(self, action):
         self.do_simulation(action, self.frame_skip)
-        obs = self._get_obs()
-        reward = self.compute_reward(action, obs)
+        next_obs = self._get_obs()
+
+        curr_gripper_pos = self.sim.data.site_xpos[0, :2]
+        curr_block_pos = next_obs['object_pos']
+
+        dist_to_block = np.linalg.norm(curr_gripper_pos - curr_block_pos)
+        block_dist = np.linalg.norm(self.goal_pos - curr_block_pos)
+        reward = - dist_to_block - block_dist
         done = False
-        return obs, reward, done, {
-            'gripper_to_object_distance': np.linalg.norm(
-                obs['gripper_qpos'][:2] - obs['object_pos']),
-            'object_to_target_distance': np.linalg.norm(
-                obs['object_pos'] - obs['target_pos']),
+        return next_obs, reward, done, {
+            'gripper_to_object_distance': dist_to_block,
+            'object_to_target_distance': block_dist,
         }
+        # self.do_simulation(action, self.frame_skip)
+        # obs = self._get_obs()
+        # reward = self.compute_reward(action, obs)
+        # done = False
+        # return obs, reward, done, {
+        #     'gripper_to_object_distance': np.linalg.norm(
+        #         obs['gripper_qpos'][:2] - obs['object_pos']),
+        #     'object_to_target_distance': np.linalg.norm(
+        #         obs['object_pos'] - obs['target_pos']),
+        # }
 
     """
     MultitaskEnv interface
@@ -220,7 +231,7 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
             rand_idxs = np.random.randint(
                 len(self._target_pos_range), size=batch_size)
             goals = self._target_pos_range[rand_idxs]
-        return { 'desired_goal': goals, 'state_desired_goal': goals }
+        return {'desired_goal': goals, 'state_desired_goal': goals}
 
     """
     Viewer setup and Rendering
@@ -238,17 +249,18 @@ class PusherEnv(MujocoEnv, MultitaskEnv, Serializable):
         init_fn = self.camera_init_fn()
         init_fn(self.viewer.cam)
 
-    def render(self, mode='rgb_array', width=256, height=256):
-        if mode == 'rgb_array':
-            if not self.viewer:
-                self.initialize_camera(self.camera_init_fn())
-                self.viewer = True
-            img = self.sim.render(width=width, height=height, mode='offscreen')
-            return img
-        elif mode == 'human':
-            super(PusherEnv, self).render(mode=mode)
-        else:
-            raise NotImplementedError
+    # def render(self, mode='rgb_array', width=256, height=256):
+    #     if mode == 'rgb_array':
+    #         if not self.viewer:
+    #             self.initialize_camera(self.camera_init_fn())
+    #             self.viewer = True
+    #         img = self.sim.render(width=width, height=height, mode='offscreen')
+    #         return img
+    #     elif mode == 'human':
+    #         super(PusherEnv, self).render(mode=mode)
+    #     else:
+    #         raise NotImplementedError
+
 
 env = PusherEnv()
 
@@ -275,4 +287,3 @@ env = PusherEnv()
 #             # img = env.render(mode='rgb_array')
 #             # plt.imshow(img)
 #             # plt.show()
-

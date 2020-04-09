@@ -33,8 +33,8 @@
         </body>
 
         <body name="obj1" pos="0.0 -0. -0.325">
-            <joint axis="1 0 0" damping="1.5" name="obj1_slidex" pos="0 0 0.05" range="-2 2" type="slide" />
-            <joint axis="0 1 0" damping="1.5" name="obj1_slidey" pos="0 0 0.05" range="-2 2" type="slide" />
+            <joint axis="1 0 0" damping="0.5" name="obj1_slidex" pos="0 0 0.05" range="-2 2" type="slide" />
+            <joint axis="0 1 0" damping="0.5" name="obj1_slidey" pos="0 0 0.05" range="-2 2" type="slide" />
             <geom conaffinity="1" contype="1" pos="0 0 0.05" density="0.001" size="0.05 0.05 0.05" rgba="0.95 0.1 0.2 1" type="box" name="object" />
         </body>
 
