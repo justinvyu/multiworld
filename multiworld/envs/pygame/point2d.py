@@ -4,6 +4,7 @@ import logging
 import numpy as np
 from gym import spaces
 from pygame import Color
+import collections
 
 from multiworld.core.multitask_env import MultitaskEnv
 from multiworld.core.serializable import Serializable
@@ -191,15 +192,13 @@ class Point2DEnv(MultitaskEnv, Serializable):
     def clear_bin_counts(self):
         self.bin_counts = np.ones((self.n_bins + 1, self.n_bins + 1))
 
-    def _discretize_observation(self, pos):
-        x, y = pos
+    def _discretize_observation(self, obs):
+        x, y = obs['state_observation'].copy()
         x_d, y_d = np.digitize(x, self.x_bins), np.digitize(y, self.y_bins)
         return np.array([x_d, y_d])
 
     def _get_obs(self):
-        pos_discrete = self._discretize_observation(self._position.copy())
-        pos_onehot = np.eye(self.n_bins + 1)[pos_discrete]
-        return dict(
+        obs = collections.OrderedDict(
             observation=self._position.copy(),
             discrete_observation=pos_discrete,
             onehot_observation=pos_onehot,
@@ -209,6 +208,14 @@ class Point2DEnv(MultitaskEnv, Serializable):
             state_desired_goal=self._target_position.copy(),
             state_achieved_goal=self._position.copy(),
         )
+
+        # Update with discretized state
+        pos_discrete = self._discretize_observation(obs)
+        pos_onehot = np.eye(self.n_bins + 1)[pos_discrete]
+        obs['discrete_observation'] = pos_discrete
+        obs['onehot_observation'] = pos_onehot
+
+        return obs
 
     def compute_rewards(self, actions, obs):
         achieved_goals = obs['state_achieved_goal']
