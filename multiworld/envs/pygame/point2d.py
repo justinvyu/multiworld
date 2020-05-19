@@ -31,7 +31,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             action_scale=1.0,
             target_radius=0.5,
             boundary_dist=4,
-            ball_radius=0.5,
+            ball_radius=0.15,
             walls=None,
             init_pos_range=None,
             target_pos_range=None,
@@ -102,6 +102,8 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
         self.observation_space = spaces.Dict([
             ('observation', self.obs_range),
+            ('onehot_observation', spaces.Box(
+                0, 1, shape=(2 * (self.n_bins + 1), ), dtype=np.float32)),
             ('desired_goal', self.obs_range),
             ('achieved_goal', self.obs_range),
             ('state_observation', self.obs_range),
@@ -200,8 +202,6 @@ class Point2DEnv(MultitaskEnv, Serializable):
     def _get_obs(self):
         obs = collections.OrderedDict(
             observation=self._position.copy(),
-            discrete_observation=pos_discrete,
-            onehot_observation=pos_onehot,
             desired_goal=self._target_position.copy(),
             achieved_goal=self._position.copy(),
             state_observation=self._position.copy(),
@@ -305,6 +305,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             self.drawer = PygameViewer(
                 screen_width=width,
                 screen_height=height,
+                # TODO(justinvyu): Action scale = 1 breaks rendering, why?
                 # x_bounds=(-self.boundary_dist - self.ball_radius,
                 #           self.boundary_dist + self.ball_radius),
                 # y_bounds=(-self.boundary_dist - self.ball_radius,
@@ -359,11 +360,14 @@ class Point2DEnv(MultitaskEnv, Serializable):
                 self.target_radius,
                 Color('green'),
             )
-        drawer.draw_solid_circle(
-            self._position,
-            self.ball_radius,
-            Color('blue'),
-        )
+        try:
+            drawer.draw_solid_circle(
+                self._position,
+                self.ball_radius,
+                Color('blue'),
+            )
+        except ValueError as e:
+            print('\n\n RENDER ERROR \n\n')
 
         for wall in self.walls:
             drawer.draw_segment(
@@ -714,18 +718,18 @@ class Point2DWallEnv(Point2DEnv):
             ],
             None: [],
         }
- 
+
         self.walls = WALL_FORMATIONS.get(wall_shape, [])
 
 if __name__ == "__main__":
     import gym
     import matplotlib
-    matplotlib.use('Qt5Agg')
+    # matplotlib.use('Qt5Agg')
     import matplotlib.pyplot as plt
     import multiworld
     multiworld.register_all_envs()
 
-    e = gym.make('Point2DFixed-v0')
+    e = gym.make('Point2DFixed-v0', **{'reward_type': 'none', 'use_count_reward': True})
     # e = gym.make('Point2DSingleWall-v0')
 
     # e = gym.make('Point2D-Box-Wall-v1')
@@ -737,8 +741,9 @@ if __name__ == "__main__":
         e.reset()
         for j in range(100):
             obs, rew, done, info = e.step(e.action_space.sample())
-            e.render()
+            # e.render()
             # img = e.get_image()
             # plt.imshow(img)
             # plt.show()
-            print(rew)
+            # print(rew)
+            print(e.observation_space, obs['onehot_observation'])
