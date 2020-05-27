@@ -54,10 +54,13 @@ class PygameViewer(object):
                 pygame.quit()
                 self.terminated = True
 
-    def draw_segment(self, p1, p2, color):
+    def draw_segment(self, p1, p2, color, aa=True):
         p1 = self.convert_xy(p1)
         p2 = self.convert_xy(p2)
-        pygame.draw.aaline(self.screen, color, p1, p2)
+        if aa:
+            pygame.draw.aaline(self.screen, color, p1, p2)
+        else:
+            pygame.draw.line(self.screen, color, p1, p2)
 
     def draw_circle(self, center, radius, color, thickness=1):
         center = self.convert_xy(center)
