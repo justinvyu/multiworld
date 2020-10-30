@@ -5,3 +5,5 @@ from multiworld.envs.pygame import register_pygame_envs
 def register_all_envs():
     register_mujoco_envs()
     register_pygame_envs()
+
+register_all_envs()

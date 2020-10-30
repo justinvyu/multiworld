@@ -40,6 +40,8 @@ class Point2DEnv(MultitaskEnv, Serializable):
             n_bins=10,
             use_count_reward=False,
             show_discrete_grid=False,
+            fix_goal_position=False,
+            goal_position=None,
             **kwargs
     ):
         if walls is None:
@@ -114,6 +116,11 @@ class Point2DEnv(MultitaskEnv, Serializable):
         self.drawer = None
         self.render_drawer = None
 
+
+        self.fix_goal_position = fix_goal_position
+        if goal_position is not None and fix_goal_position:
+            self.goal_position = np.array(goal_position, dtype='float32')
+        
         self.reset()
 
     def step(self, velocities):
@@ -167,7 +174,10 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
     def reset(self):
         # TODO: Make this more general
-        self._target_position = self.sample_goal()['state_desired_goal']
+        if self.fix_goal_position:
+            self._target_position = self.goal_position
+        else:
+            self._target_position = self.sample_goal()['state_desired_goal']
         # if self.randomize_position_on_reset:
         self._position = self._sample_position(
             # self.obs_range.low,
@@ -223,6 +233,8 @@ class Point2DEnv(MultitaskEnv, Serializable):
         d = np.linalg.norm(achieved_goals - desired_goals, axis=-1)
         if self.reward_type == "sparse":
             r = -(d > self.target_radius).astype(np.float32)
+        elif self.reward_type == "sparse-positive":
+            r = (d < self.target_radius).astype(np.float32)
         elif self.reward_type == "dense":
             r = -d
         elif self.reward_type == "vectorized_dense":
