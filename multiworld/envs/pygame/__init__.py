@@ -60,6 +60,38 @@ def register_pygame_envs():
         },
     )
     register(
+        id='Point2DMazeEvalMedium-v0',
+        entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
+        kwargs={
+            'wall_shape': 'hard-maze',
+            'reward_type': 'sparse-positive',
+            'init_pos_range': ([-3, -3], [-3, -3]),
+            'render_onscreen': True,
+            'boundary_dist': 4,
+            'inner_wall_max_dist': 2,
+            'images_are_rgb': True,
+            'render_target': True,
+            'fix_goal_position': True,
+            'goal_position': [3, 3]
+        },
+    )
+    register(
+        id='Point2DMazeEvalEasy-v0',
+        entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
+        kwargs={
+            'wall_shape': 'hard-maze',
+            'reward_type': 'sparse-positive',
+            'init_pos_range': ([-3, -3], [-3, -3]),
+            'render_onscreen': True,
+            'boundary_dist': 4,
+            'inner_wall_max_dist': 2,
+            'images_are_rgb': True,
+            'render_target': True,
+            'fix_goal_position': True,
+            'goal_position': [3, -3]
+        },
+    )
+    register(
         id='Point2DMazeExplore-v0',
         entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
         kwargs={
