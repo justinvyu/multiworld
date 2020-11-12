@@ -120,7 +120,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
         self.fix_goal_position = fix_goal_position
         if goal_position is not None and fix_goal_position:
             self.goal_position = np.array(goal_position, dtype='float32')
-        
+
         self.reset()
 
     def step(self, velocities):
@@ -728,9 +728,112 @@ class Point2DWallEnv(Point2DEnv):
                     0,
                 ),
             ],
+            "double-maze": [
+                HorizontalWall(
+                    self.ball_radius,
+                    -self.boundary_dist / 1.5,
+                    -self.boundary_dist,
+                    self.boundary_dist,
+                ),
+                HorizontalWall(
+                    self.ball_radius,
+                    -self.inner_wall_max_dist / 2,
+                    -self.boundary_dist / 8,
+                    self.boundary_dist / 8  + self.inner_wall_max_dist,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    -self.boundary_dist / 8,
+                    -self.boundary_dist / 1.5,
+                    -self.inner_wall_max_dist / 2,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    -self.boundary_dist / 8 - self.inner_wall_max_dist,
+                    -self.boundary_dist / 1.5 + self.inner_wall_max_dist,
+                    self.boundary_dist / 1.5,
+                ),
+                HorizontalWall(
+                    self.ball_radius,
+                    -self.boundary_dist / 1.5 + self.inner_wall_max_dist,
+                    -self.boundary_dist + self.inner_wall_max_dist,
+                    -self.boundary_dist / 8 - self.inner_wall_max_dist,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    -self.boundary_dist + self.inner_wall_max_dist,
+                    -self.boundary_dist / 1.5 + self.inner_wall_max_dist,
+                    self.boundary_dist / 1.5 - self.inner_wall_max_dist,
+                ),
+                HorizontalWall(
+                    self.ball_radius,
+                    self.boundary_dist / 1.5 - self.inner_wall_max_dist,
+                    -self.boundary_dist + self.inner_wall_max_dist,
+                    -self.boundary_dist / 8 - 2 * self.inner_wall_max_dist,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    -self.boundary_dist / 8 - 2 * self.inner_wall_max_dist,
+                    -self.boundary_dist / 1.5 + 2 * self.inner_wall_max_dist,
+                    self.boundary_dist / 1.5 - self.inner_wall_max_dist,
+                ),
+                HorizontalWall(
+                    self.ball_radius,
+                    -self.boundary_dist / 1.5 + 2 * self.inner_wall_max_dist,
+                    -self.boundary_dist + 2 * self.inner_wall_max_dist,
+                    -self.boundary_dist / 8 - 2 * self.inner_wall_max_dist,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    -self.boundary_dist + 2 * self.inner_wall_max_dist,
+                    -self.boundary_dist / 1.5 + 2 * self.inner_wall_max_dist,
+                    self.boundary_dist / 1.5 - 2 * self.inner_wall_max_dist,
+                ),
+                HorizontalWall(
+                    self.ball_radius,
+                    self.boundary_dist / 1.5 - 2 * self.inner_wall_max_dist,
+                    -self.boundary_dist + 2 * self.inner_wall_max_dist,
+                    -self.boundary_dist / 8 - 3 * self.inner_wall_max_dist,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    -self.boundary_dist / 8 - 3 * self.inner_wall_max_dist,
+                    -self.boundary_dist / 1.5 + 3 * self.inner_wall_max_dist,
+                    self.boundary_dist / 1.5 - 2 * self.inner_wall_max_dist,
+                ),
+                HorizontalWall(
+                    self.ball_radius,
+                    -self.boundary_dist / 1.5 + 3 * self.inner_wall_max_dist,
+                    -self.boundary_dist + 3 * self.inner_wall_max_dist,
+                    -self.boundary_dist / 8 - 3 * self.inner_wall_max_dist,
+                ),
+                VerticalWall(
+                    self.ball_radius,
+                    -self.boundary_dist + 3 * self.inner_wall_max_dist,
+                    -self.boundary_dist / 1.5 + 3 * self.inner_wall_max_dist,
+                    self.boundary_dist / 1.5 - 3 * self.inner_wall_max_dist,
+                ),
+            ],
             None: [],
         }
 
+        mirror_walls = []
+        for wall in WALL_FORMATIONS['double-maze']:
+            if isinstance(wall, HorizontalWall):
+                mirror_walls.append(HorizontalWall(
+                    self.ball_radius,
+                    -wall.min_y - wall.min_dist - wall.thickness,
+                    -wall.max_x + wall.min_dist + wall.thickness,
+                    -wall.min_x - wall.min_dist - wall.thickness,
+                ))
+            elif isinstance(wall, VerticalWall):
+                mirror_walls.append(VerticalWall(
+                    self.ball_radius,
+                    -wall.min_x - wall.min_dist - wall.thickness,
+                    -wall.max_y + wall.min_dist + wall.thickness,
+                    -wall.min_y - wall.min_dist - wall.thickness,
+                ))
+        WALL_FORMATIONS['double-maze'].extend(mirror_walls)
         self.walls = WALL_FORMATIONS.get(wall_shape, [])
 
 if __name__ == "__main__":
