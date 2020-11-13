@@ -728,7 +728,11 @@ class Point2DWallEnv(Point2DEnv):
                     0,
                 ),
             ],
-            "double-maze": [
+            None: [],
+        }
+
+        if wall_shape == "double-maze":
+            WALL_FORMATIONS["double-maze"] = [
                 HorizontalWall(
                     self.ball_radius,
                     -self.boundary_dist / 1.5,
@@ -813,27 +817,25 @@ class Point2DWallEnv(Point2DEnv):
                     -self.boundary_dist / 1.5 + 3 * self.inner_wall_max_dist,
                     self.boundary_dist / 1.5 - 3 * self.inner_wall_max_dist,
                 ),
-            ],
-            None: [],
-        }
+            ]
+            mirror_walls = []
+            for wall in WALL_FORMATIONS['double-maze']:
+                if isinstance(wall, HorizontalWall):
+                    mirror_walls.append(HorizontalWall(
+                        self.ball_radius,
+                        -wall.min_y - wall.min_dist - wall.thickness,
+                        -wall.max_x + wall.min_dist + wall.thickness,
+                        -wall.min_x - wall.min_dist - wall.thickness,
+                    ))
+                elif isinstance(wall, VerticalWall):
+                    mirror_walls.append(VerticalWall(
+                        self.ball_radius,
+                        -wall.min_x - wall.min_dist - wall.thickness,
+                        -wall.max_y + wall.min_dist + wall.thickness,
+                        -wall.min_y - wall.min_dist - wall.thickness,
+                    ))
+            WALL_FORMATIONS['double-maze'].extend(mirror_walls)
 
-        mirror_walls = []
-        for wall in WALL_FORMATIONS['double-maze']:
-            if isinstance(wall, HorizontalWall):
-                mirror_walls.append(HorizontalWall(
-                    self.ball_radius,
-                    -wall.min_y - wall.min_dist - wall.thickness,
-                    -wall.max_x + wall.min_dist + wall.thickness,
-                    -wall.min_x - wall.min_dist - wall.thickness,
-                ))
-            elif isinstance(wall, VerticalWall):
-                mirror_walls.append(VerticalWall(
-                    self.ball_radius,
-                    -wall.min_x - wall.min_dist - wall.thickness,
-                    -wall.max_y + wall.min_dist + wall.thickness,
-                    -wall.min_y - wall.min_dist - wall.thickness,
-                ))
-        WALL_FORMATIONS['double-maze'].extend(mirror_walls)
         self.walls = WALL_FORMATIONS.get(wall_shape, [])
 
 if __name__ == "__main__":
