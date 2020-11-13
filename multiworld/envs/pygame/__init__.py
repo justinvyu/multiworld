@@ -44,7 +44,7 @@ def register_pygame_envs():
         },
     )
     register(
-        id='Point2DMazeEval-v0',
+        id='Point2DMazeEvalHard-v0',
         entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
         kwargs={
             'wall_shape': 'hard-maze',
