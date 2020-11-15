@@ -225,6 +225,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             state_observation=self._position.copy(),
             state_desired_goal=self._target_position.copy(),
             state_achieved_goal=self._position.copy(),
+            image_observation=self.render(mode='rgb_array')
         )
 
         # Update with discretized state
@@ -435,6 +436,10 @@ class Point2DEnv(MultitaskEnv, Serializable):
             self.render_drawer = None
             return
         if mode =='rgb_array':
+            if width is None:
+                width = self.render_size
+            if height is None:
+                height = self.render_size
             return self.get_image(width=width, height=height)
 
         if self.render_drawer is None or self.render_drawer.terminated:
