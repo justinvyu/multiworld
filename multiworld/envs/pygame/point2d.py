@@ -41,6 +41,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             use_count_reward=False,
             show_discrete_grid=False,
             fix_goal_position=False,
+            multiple_goals=False,
             goal_position=None,
             **kwargs
     ):
@@ -118,6 +119,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
 
         self.fix_goal_position = fix_goal_position
+        self.multiple_goals = multiple_goals
         if goal_position is not None and fix_goal_position:
             self.goal_position = np.array(goal_position, dtype='float32')
 
@@ -150,9 +152,14 @@ class Point2DEnv(MultitaskEnv, Serializable):
             a_min=-self.boundary_dist,
             a_max=self.boundary_dist,
         )
-        distance_to_target = np.linalg.norm(
-            self._position - self._target_position
-        )
+
+        if self.multiple_goals:
+            distance_to_target = np.min([np.linalg.norm(self._position - t) \
+                for t in self._target_position])
+        else:
+            distance_to_target = np.linalg.norm(
+                self._position - self._target_position
+            )
         is_success = distance_to_target < self.target_radius
 
         ob = self._get_obs()
@@ -168,6 +175,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             'speed': np.linalg.norm(velocities),
             'is_success': is_success,
         }
+
         done = False
         return ob, reward, done, info
 
@@ -230,7 +238,14 @@ class Point2DEnv(MultitaskEnv, Serializable):
     def compute_rewards(self, actions, obs):
         achieved_goals = obs['state_achieved_goal']
         desired_goals = obs['state_desired_goal']
-        d = np.linalg.norm(achieved_goals - desired_goals, axis=-1)
+
+        if self.multiple_goals:
+            d = np.min(np.linalg.norm(np.repeat(achieved_goals, \
+                desired_goals.shape[-2], axis=-2)[None] - desired_goals, axis=-1),
+                axis=-1)
+        else:
+            d = np.linalg.norm(achieved_goals - desired_goals, axis=-1)
+
         if self.reward_type == "sparse":
             r = -(d > self.target_radius).astype(np.float32)
         elif self.reward_type == "sparse-positive":
@@ -242,7 +257,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
         elif self.reward_type == "none":
             r = np.zeros(d.shape)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError()\
 
         if self.use_count_reward:
             # TODO: Add different count based strategies
@@ -339,17 +354,20 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
     def set_to_goal(self, goal_dict):
         goal = goal_dict["state_desired_goal"]
-        self._position = goal
-        self._target_position = goal
+        if self.multiple_goals:
+            self._target_position = goal
+            self._position = goal[np.random.choice(len(goal))]
+        else:
+            self._position = goal
+            self._target_position = goal
 
     def get_env_state(self):
         return self._get_obs()
 
     def set_env_state(self, state):
         position = state["state_observation"]
-        goal = state["state_desired_goal"]
+        self.set_to_goal(state)
         self._position = position
-        self._target_position = goal
 
     def draw(self, drawer):
         drawer.fill(Color('white'))
@@ -367,11 +385,19 @@ class Point2DEnv(MultitaskEnv, Serializable):
                     Color(220,220,220,25), aa=False)
 
         if self.show_goal:
-            drawer.draw_solid_circle(
-                self._target_position,
-                self.target_radius,
-                Color('green'),
-            )
+            if self.multiple_goals:
+                for t in self._target_position:
+                    drawer.draw_solid_circle(
+                        t,
+                        self.target_radius,
+                        Color('green'),
+                    )
+            else:
+                drawer.draw_solid_circle(
+                    self._target_position,
+                    self.target_radius,
+                    Color('green'),
+                    )
         try:
             drawer.draw_solid_circle(
                 self._position,

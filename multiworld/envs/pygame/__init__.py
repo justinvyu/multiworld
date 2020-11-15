@@ -106,17 +106,38 @@ def register_pygame_envs():
         }
     )
     register(
-        id='Point2DDoubleMaze-v0',
+        id='Point2DDoubleMazeExplore-v0',
         entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
         kwargs={
             'wall_shape': 'double-maze',
-            'reward_type': 'sparse-positive',
+            'reward_type': 'sparse',
+            'target_radius': 1,
+            'ball_radius': 0.3,
             'init_pos_range': ([0, 0], [0, 0]),
             'render_onscreen': True,
             'boundary_dist': 16,
             'inner_wall_max_dist': 2,
             'images_are_rgb': True,
-            'render_target': True
+            'render_target': True,
+        }
+    )
+    register(
+        id='Point2DDoubleMazeEval-v0',
+        entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
+        kwargs={
+            'wall_shape': 'double-maze',
+            'reward_type': 'sparse',
+            'target_radius': 1,
+            'ball_radius': 0.3,
+            'init_pos_range': ([0, 0], [0, 0]),
+            'render_onscreen': True,
+            'boundary_dist': 16,
+            'inner_wall_max_dist': 2,
+            'images_are_rgb': True,
+            'render_target': True,
+            'fix_goal_position': True,
+            'multiple_goals': True,
+            'goal_position': [[-9, -3], [9, 3]],
         }
     )
     register(
