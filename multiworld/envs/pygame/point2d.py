@@ -37,7 +37,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             target_pos_range=None,
             images_are_rgb=False,  # else black and white
             show_goal=True,
-            n_bins=10,
+            n_bins=25,
             use_count_reward=False,
             show_discrete_grid=False,
             fix_goal_position=False,
@@ -117,7 +117,6 @@ class Point2DEnv(MultitaskEnv, Serializable):
         self.drawer = None
         self.render_drawer = None
 
-
         self.fix_goal_position = fix_goal_position
         self.multiple_goals = multiple_goals
         if goal_position is not None and fix_goal_position:
@@ -179,7 +178,6 @@ class Point2DEnv(MultitaskEnv, Serializable):
         done = False
         return ob, reward, done, info
 
-
     def reset(self):
         # TODO: Make this more general
         if self.fix_goal_position:
@@ -213,9 +211,22 @@ class Point2DEnv(MultitaskEnv, Serializable):
         self.bin_counts = np.ones((self.n_bins + 1, self.n_bins + 1))
 
     def _discretize_observation(self, obs):
-        x, y = obs['state_observation'].copy()
-        x_d, y_d = np.digitize(x, self.x_bins), np.digitize(y, self.y_bins)
-        return np.array([x_d, y_d])
+        if isinstance(obs, dict):
+            x, y = obs['state_observation'].copy()
+            x_d, y_d = np.digitize(x, self.x_bins), np.digitize(y, self.y_bins)
+            return np.array([x_d, y_d])
+        else:
+            assert isinstance(obs, np.ndarray) and obs.ndim == 2 and obs.shape[1] == 2
+            x_d = np.digitize(obs[:, 0], self.x_bins)
+            y_d = np.digitize(obs[:, 1], self.y_bins)
+            # print(x_d, y_d)
+            return np.hstack([x_d, y_d]).reshape(obs.shape)
+
+    def get_count_bonuses(self, obs):
+        obs_d = self._discretize_observation(obs)
+        # TODO: give multiple options for count bonus
+        # print(self.bin_counts)
+        return 1 / np.sqrt(self.bin_counts[obs_d[:, 0], obs_d[:, 1]])
 
     def _get_obs(self):
         obs = collections.OrderedDict(
