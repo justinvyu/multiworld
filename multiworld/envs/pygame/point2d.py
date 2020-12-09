@@ -184,6 +184,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             self._target_position = self.goal_position
         else:
             self._target_position = self.sample_goal()['state_desired_goal']
+
         # if self.randomize_position_on_reset:
         self._position = self._sample_position(
             # self.obs_range.low,
@@ -227,7 +228,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
     def get_count_bonuses(self, obs):
         obs_d = self._discretize_observation(obs)
-    
+
         # TODO: give multiple options for count bonus
         return 1 / np.sqrt(self.bin_counts[obs_d[:, 0], obs_d[:, 1]])
 
@@ -272,7 +273,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
         elif self.reward_type == "none":
             r = np.zeros(d.shape)
         else:
-            raise NotImplementedError()\
+            raise NotImplementedError()
 
         if self.use_count_reward:
             # TODO: Add different count based strategies
@@ -341,7 +342,8 @@ class Point2DEnv(MultitaskEnv, Serializable):
         x_d, y_d = ob['discrete_observation']
         self.bin_counts[x_d, y_d] += 1
 
-
+    def set_goal(self, goal):
+        self._target_position = goal
 
     """Functions for ImageEnv wrapper"""
 
