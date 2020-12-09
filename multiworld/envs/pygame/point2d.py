@@ -191,6 +191,10 @@ class Point2DEnv(MultitaskEnv, Serializable):
             self.init_pos_range.low,
             self.init_pos_range.high,
         )
+        ob = self._get_obs()
+        x_d, y_d = ob['discrete_observation']
+        self.bin_counts[x_d, y_d] += 1
+
         return self._get_obs()
 
     def _position_inside_wall(self, pos):
@@ -217,15 +221,14 @@ class Point2DEnv(MultitaskEnv, Serializable):
             return np.array([x_d, y_d])
         else:
             assert isinstance(obs, np.ndarray) and obs.ndim == 2 and obs.shape[1] == 2
-            x_d = np.digitize(obs[:, 0], self.x_bins)
-            y_d = np.digitize(obs[:, 1], self.y_bins)
-            # print(x_d, y_d)
-            return np.hstack([x_d, y_d]).reshape(obs.shape)
+            x_d = np.expand_dims(np.digitize(obs[:, 0], self.x_bins), 1)
+            y_d = np.expand_dims(np.digitize(obs[:, 1], self.y_bins), 1)
+            return np.concatenate((x_d, y_d), axis=1)
 
     def get_count_bonuses(self, obs):
         obs_d = self._discretize_observation(obs)
+    
         # TODO: give multiple options for count bonus
-        # print(self.bin_counts)
         return 1 / np.sqrt(self.bin_counts[obs_d[:, 0], obs_d[:, 1]])
 
     def _get_obs(self):
@@ -333,6 +336,12 @@ class Point2DEnv(MultitaskEnv, Serializable):
     def set_position(self, pos):
         self._position[0] = pos[0]
         self._position[1] = pos[1]
+
+        ob = self._get_obs()
+        x_d, y_d = ob['discrete_observation']
+        self.bin_counts[x_d, y_d] += 1
+
+
 
     """Functions for ImageEnv wrapper"""
 
