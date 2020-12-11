@@ -87,8 +87,8 @@ class Point2DEnv(MultitaskEnv, Serializable):
         if not init_pos_range:
             self.init_pos_range = self.obs_range
         else:
-            assert np.all(np.abs(init_pos_range) < boundary_dist), (f"Init position must be"
-                "within the boundaries of the environment: ({-boundary_dist}, {boundary_dist})")
+            assert np.all(np.abs(init_pos_range) <= boundary_dist), ("Init position must be"
+                f"within the boundaries of the environment: ({-boundary_dist}, {boundary_dist})")
             low, high = init_pos_range
             self.init_pos_range = spaces.Box(
                 np.array(low), np.array(high), dtype='float32')
@@ -96,8 +96,8 @@ class Point2DEnv(MultitaskEnv, Serializable):
         if not target_pos_range:
             self.target_pos_range = self.obs_range
         else:
-            assert np.all(np.abs(target_pos_range) < boundary_dist), (f"Goal position must be"
-                "within the boundaries of the environment: ({-boundary_dist}, {boundary_dist})")
+            assert np.all(np.abs(target_pos_range) <= boundary_dist), ("Goal position must be"
+                f"within the boundaries of the environment: ({-boundary_dist}, {boundary_dist})")
 
             low, high = target_pos_range
             self.target_pos_range = spaces.Box(
@@ -226,6 +226,10 @@ class Point2DEnv(MultitaskEnv, Serializable):
             y_d = np.expand_dims(np.digitize(obs[:, 1], self.y_bins), 1)
             return np.concatenate((x_d, y_d), axis=1)
 
+    def get_bin_counts(self, obs):
+        obs_d = self._discretize_observation(obs)
+        return self.bin_counts[obs_d[:, 0], obs_d[:, 1]]
+
     def get_count_bonuses(self, obs):
         obs_d = self._discretize_observation(obs)
 
@@ -344,6 +348,9 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
     def set_goal(self, goal):
         self._target_position = goal
+
+    def get_target_position(self):
+        return self._target_position
 
     """Functions for ImageEnv wrapper"""
 
