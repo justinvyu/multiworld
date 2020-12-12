@@ -56,7 +56,8 @@ def register_pygame_envs():
             'images_are_rgb': True,
             'render_target': True,
             'fix_goal_position': True,
-            'goal_position': [-1, 1]
+            'goal_position': [-1, 1],
+            'action_scale': 0.5,
         },
     )
     register(
@@ -73,6 +74,7 @@ def register_pygame_envs():
             'render_target': True,
             'fix_goal_position': True,
             'goal_position': [3, 3],
+            'action_scale': 0.5,
         },
     )
     register(
@@ -89,6 +91,7 @@ def register_pygame_envs():
             'render_target': True,
             'fix_goal_position': True,
             'goal_position': [3, -3],
+            'action_scale': 0.5,
         },
     )
     register(

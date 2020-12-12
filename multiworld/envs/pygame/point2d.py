@@ -427,7 +427,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
                     self._target_position,
                     self.target_radius,
                     Color('green'),
-                    )
+                )
         try:
             drawer.draw_solid_circle(
                 self._position,
