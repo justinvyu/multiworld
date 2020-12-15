@@ -112,6 +112,23 @@ def register_pygame_envs():
         },
     )
     register(
+        id='Point2DRoomsExplore-v0',
+        entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
+        kwargs={
+            'wall_shape': 'rooms',
+            'reward_type': 'sparse-positive',
+            'init_pos_range': ([-3, -3], [-3, -3]),
+            'render_onscreen': False,
+            'boundary_dist': 4,
+            'inner_wall_max_dist': 2,
+            'images_are_rgb': True,
+            'render_target': False,
+            'fix_goal_position': True,
+            'goal_position': [5, 5],
+            'action_scale': 0.5,
+        },
+    )
+    register(
         id='Point2DMazeExplore-v0',
         entry_point='multiworld.envs.pygame.point2d:Point2DWallEnv',
         kwargs={
