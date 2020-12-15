@@ -17,7 +17,7 @@ import abc
 
 class Wall(object, metaclass=abc.ABCMeta):
     def __init__(self, min_x, max_x, min_y, max_y, min_dist, thickness,
-                 epsilon_from_wall=0.01):
+                 epsilon_from_wall=0.005):
         self.top_segment = Segment(
             min_x,
             max_y,

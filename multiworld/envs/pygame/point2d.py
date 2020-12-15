@@ -427,7 +427,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
                     self._target_position,
                     self.target_radius,
                     Color('green'),
-                    )
+                )
         try:
             drawer.draw_solid_circle(
                 self._position,
@@ -615,7 +615,7 @@ class Point2DWallEnv(Point2DEnv):
     def __init__(
             self,
             wall_shape="hard-maze",
-            wall_thickness=1.0,
+            wall_thickness=0,
             inner_wall_max_dist=1,
             **kwargs
     ):
@@ -895,6 +895,44 @@ class Point2DWallEnv(Point2DEnv):
                         -wall.min_y - wall.min_dist - wall.thickness,
                     ))
             WALL_FORMATIONS['double-maze'].extend(mirror_walls)
+
+        if wall_shape == "rooms":
+            room_width = 2 * self.boundary_dist / 3
+            door_width = room_width / 3
+            nondoor_width = (room_width - door_width) / 2
+
+            y0 = x1 = self.boundary_dist - room_width
+            y1 = x0 = -self.boundary_dist + room_width
+
+            WALL_FORMATIONS["rooms"] = [
+                # Top rooms
+                HorizontalWall(self.ball_radius, y0, -self.boundary_dist, x0, wall_thickness),
+                VerticalWall(self.ball_radius, x0, self.boundary_dist - nondoor_width, self.boundary_dist, wall_thickness),
+                VerticalWall(self.ball_radius, x0, y0, y0 + nondoor_width, wall_thickness),
+
+                HorizontalWall(self.ball_radius, y0, x1, self.boundary_dist, wall_thickness),
+                VerticalWall(self.ball_radius, x1, self.boundary_dist - nondoor_width, self.boundary_dist, wall_thickness),
+                VerticalWall(self.ball_radius, x1, y0, y0 + nondoor_width, wall_thickness),
+
+                HorizontalWall(self.ball_radius, y0, x0, x0 + nondoor_width, wall_thickness),
+                HorizontalWall(self.ball_radius, y0, x1 - nondoor_width, x1, wall_thickness),
+
+                HorizontalWall(self.ball_radius, y1, -self.boundary_dist, x0, wall_thickness),
+                HorizontalWall(self.ball_radius, y1, x1, self.boundary_dist, wall_thickness),
+
+                VerticalWall(self.ball_radius, x0, y0 - nondoor_width, y0, wall_thickness),
+                VerticalWall(self.ball_radius, x0, y1, y1 + nondoor_width, wall_thickness),
+                VerticalWall(self.ball_radius, x1, y0 - nondoor_width, y0, wall_thickness),
+                VerticalWall(self.ball_radius, x1, y1, y1 + nondoor_width, wall_thickness),
+
+                HorizontalWall(self.ball_radius, y1, x0, x0 + nondoor_width, wall_thickness),
+                HorizontalWall(self.ball_radius, y1, x1 - nondoor_width, x1, wall_thickness),
+
+                VerticalWall(self.ball_radius, x0, y1 - nondoor_width, y1, wall_thickness),
+                VerticalWall(self.ball_radius, x0, -self.boundary_dist, -self.boundary_dist + nondoor_width, wall_thickness),
+                VerticalWall(self.ball_radius, x1, y1 - nondoor_width, y1, wall_thickness),
+                VerticalWall(self.ball_radius, x1, -self.boundary_dist, -self.boundary_dist + nondoor_width, wall_thickness),
+            ]
 
         self.walls = WALL_FORMATIONS.get(wall_shape, [])
 
