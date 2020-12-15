@@ -29,7 +29,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             render_size=256,
             reward_type="dense",
             action_scale=1.0,
-            target_radius=0.5,
+            target_radius=0.25,
             boundary_dist=4,
             ball_radius=0.15,
             walls=None,
@@ -37,7 +37,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             target_pos_range=None,
             images_are_rgb=False,  # else black and white
             show_goal=True,
-            n_bins=25,
+            n_bins=32,
             use_count_reward=False,
             show_discrete_grid=False,
             fix_goal_position=False,
