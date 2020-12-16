@@ -933,6 +933,32 @@ class Point2DWallEnv(Point2DEnv):
                 VerticalWall(self.ball_radius, x1, y1 - nondoor_width, y1, wall_thickness),
                 VerticalWall(self.ball_radius, x1, -self.boundary_dist, -self.boundary_dist + nondoor_width, wall_thickness),
             ]
+        if wall_shape == "rooms_large":
+            room_width = 2 * self.boundary_dist / 3 / 2
+            door_width = 1
+
+            y0 = x1 = self.boundary_dist - room_width
+            y1 = x0 = -self.boundary_dist + room_width
+
+            WALL_FORMATIONS["rooms_large"] = []
+            for j in range(5):
+                for i in range(6):
+                    WALL_FORMATIONS["rooms_large"].append(VerticalWall(self.ball_radius, x0 + room_width * j, \
+                        self.boundary_dist - room_width * (i + 0.5) + door_width / 2, \
+                        self.boundary_dist - room_width * i, wall_thickness))
+                    WALL_FORMATIONS["rooms_large"].append(VerticalWall(self.ball_radius, x0 + room_width * j, \
+                        self.boundary_dist - room_width * (i + 1), \
+                        self.boundary_dist - room_width * (i + 0.5) - door_width/2, wall_thickness))
+
+            for j in range(5):
+                for i in range(6):
+                    WALL_FORMATIONS["rooms_large"].append(HorizontalWall(self.ball_radius, y1 + j * room_width,\
+                     self.boundary_dist - room_width * (i + 0.5) + door_width / 2, \
+                     self.boundary_dist - room_width * i, wall_thickness))
+                    WALL_FORMATIONS["rooms_large"].append(HorizontalWall(self.ball_radius, y1 + j * room_width,\
+                     self.boundary_dist - room_width * (i + 1), \
+                     self.boundary_dist - room_width * (i + 0.5) - door_width/2, wall_thickness))
+
 
         self.walls = WALL_FORMATIONS.get(wall_shape, [])
 
