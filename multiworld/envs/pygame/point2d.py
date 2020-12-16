@@ -29,7 +29,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             render_size=256,
             reward_type="dense",
             action_scale=1.0,
-            target_radius=0.25,
+            target_radius=0.1,
             boundary_dist=4,
             ball_radius=0.15,
             walls=None,
