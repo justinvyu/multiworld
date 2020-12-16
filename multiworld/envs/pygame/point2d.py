@@ -959,6 +959,18 @@ class Point2DWallEnv(Point2DEnv):
                      self.boundary_dist - room_width * (i + 1), \
                      self.boundary_dist - room_width * (i + 0.5) - door_width/2, wall_thickness))
 
+            vertical_close = [(1, 2), (0, 3), (3, 5), (3, 3), (0, 1), (4, 5)]
+            horizontal_close = [(1, 2), (3, 0), (4, 2), (0, 3), (2, 2), (4, 5), (2, 5)]
+            for j, i in vertical_close:
+                WALL_FORMATIONS["rooms_large"].append(VerticalWall(self.ball_radius, x0 + room_width * j, \
+                    self.boundary_dist - room_width * (i + 0.5) - door_width / 2, \
+                    self.boundary_dist - room_width * (i + 0.5) + door_width/2, wall_thickness))
+            for j, i in horizontal_close:
+                WALL_FORMATIONS["rooms_large"].append(HorizontalWall(self.ball_radius, x0 + room_width * j, \
+                    self.boundary_dist - room_width * (i + 0.5) - door_width / 2, \
+                    self.boundary_dist - room_width * (i + 0.5) + door_width/2, wall_thickness))
+
+
 
         self.walls = WALL_FORMATIONS.get(wall_shape, [])
 
