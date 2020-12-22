@@ -286,29 +286,29 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
         return r
 
-    def get_diagnostics(self, paths, prefix=''):
-        statistics = OrderedDict()
-        for stat_name in [
-            'radius',
-            'target_position',
-            'distance_to_target',
-            'velocity',
-            'speed',
-            'is_success',
-        ]:
-            stat_name = stat_name
-            stat = get_stat_in_paths(paths, 'env_infos', stat_name)
-            statistics.update(create_stats_ordered_dict(
-                '%s%s' % (prefix, stat_name),
-                stat,
-                always_show_all_stats=True,
-                ))
-            statistics.update(create_stats_ordered_dict(
-                'Final %s%s' % (prefix, stat_name),
-                [s[-1] for s in stat],
-                always_show_all_stats=True,
-                ))
-        return statistics
+    # def get_diagnostics(self, paths, prefix=''):
+    #     statistics = OrderedDict()
+    #     for stat_name in [
+    #         'radius',
+    #         'target_position',
+    #         'distance_to_target',
+    #         'velocity',
+    #         'speed',
+    #         'is_success',
+    #     ]:
+    #         stat_name = stat_name
+    #         stat = get_stat_in_paths(paths, 'env_infos', stat_name)
+    #         statistics.update(create_stats_ordered_dict(
+    #             '%s%s' % (prefix, stat_name),
+    #             stat,
+    #             always_show_all_stats=True,
+    #             ))
+    #         statistics.update(create_stats_ordered_dict(
+    #             'Final %s%s' % (prefix, stat_name),
+    #             [s[-1] for s in stat],
+    #             always_show_all_stats=True,
+    #             ))
+    #     return statistics
 
     def get_goal(self):
         return {
@@ -492,7 +492,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
 
     def get_diagnostics(self, paths, prefix=''):
         statistics = OrderedDict()
-        for stat_name in ('distance_to_target', ):
+        for stat_name in ('distance_to_target', 'is_success'):
             stat_name = stat_name
             stat = get_stat_in_paths(paths, 'env_infos', stat_name)
             statistics.update(create_stats_ordered_dict(
@@ -969,7 +969,6 @@ class Point2DWallEnv(Point2DEnv):
                 WALL_FORMATIONS["rooms_large"].append(HorizontalWall(self.ball_radius, x0 + room_width * j, \
                     self.boundary_dist - room_width * (i + 0.5) - door_width / 2, \
                     self.boundary_dist - room_width * (i + 0.5) + door_width/2, wall_thickness))
-
 
 
         self.walls = WALL_FORMATIONS.get(wall_shape, [])
