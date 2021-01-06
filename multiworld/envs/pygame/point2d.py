@@ -45,8 +45,8 @@ class Point2DEnv(MultitaskEnv, Serializable):
             multiple_goals=False,
             goal_position=None,
             pointmass_color="blue",
-            bg_color="black",
-            wall_color="white",
+            bg_color="white",
+            wall_color="black",
             **kwargs
     ):
         if walls is None:
@@ -491,7 +491,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
         self._position = position
 
     def draw(self, drawer):
-        drawer.fill(self.bg_color)
+        drawer.fill(Color(self.bg_color))
 
         if self.show_discrete_grid:
             for x in self.x_bins:
@@ -519,7 +519,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
                     self.target_radius,
                     Color('green'),
                 )
-            )
+
         drawer.draw_solid_circle(
             self._position,
             self.ball_radius,
