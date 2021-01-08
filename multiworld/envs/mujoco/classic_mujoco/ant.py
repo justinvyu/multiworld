@@ -18,7 +18,11 @@ class AntEnv(MujocoEnv, Serializable):
             self,
             use_low_gear_ratio=False,
             include_contact_forces_in_state=True,
+            reset_every_n_episodes=1,
+            fixed_reset_xy=(0, 0),
+            random_reset=False,
             xml_path=None,
+            **kwargs,
     ):
         self.quick_init(locals())
         if xml_path is None:
@@ -39,6 +43,14 @@ class AntEnv(MujocoEnv, Serializable):
         high = np.inf * np.ones(obs_size)
         low = -high
         self.observation_space = Box(low, high)
+
+        self.reset_every_n_episodes = reset_every_n_episodes
+        self.has_reset = False
+        self.reset_count = 0
+
+        self.fixed_reset_xy = fixed_reset_xy
+        self.init_qpos[:2] = fixed_reset_xy
+        self.random_reset = random_reset
 
     def step(self, a):
         torso_xyz_before = self.get_body_com("torso")
@@ -80,9 +92,31 @@ class AntEnv(MujocoEnv, Serializable):
                 self.sim.data.qvel.flat,
             ])
 
+    def reset(self):
+        if self.should_reset:
+            self.has_reset = True
+            self.sim.reset()
+            self.reset_model()
+
+        self.reset_count += 1
+        return self._get_obs()
+
+    @property
+    def should_reset(self):
+        return (
+            not self.has_reset
+            or (self.reset_every_n_episodes < float('inf')
+                and self.reset_count % self.reset_every_n_episodes == 0)
+        )
+
     def reset_model(self):
-        qpos = self.init_qpos + self.np_random.uniform(size=self.model.nq,
-                                                       low=-.1, high=.1)
+        if self.random_reset:
+            qpos = self.init_qpos.copy()
+            r, theta = np.random.uniform(0, 5), np.random.uniform(0, 2 * np.pi)
+            qpos[:2] = (r * np.cos(theta), r * np.sin(theta))
+            qpos += self.np_random.uniform(size=self.model.nq, low=-.1, high=.1)
+        else:
+            qpos = self.init_qpos + self.np_random.uniform(size=self.model.nq, low=-.1, high=.1)
         qvel = self.init_qvel + self.np_random.randn(self.model.nv) * .1
         self.set_state(qpos, qvel)
         return self._get_obs()
@@ -92,15 +126,21 @@ class AntEnv(MujocoEnv, Serializable):
 
 
 class AntXYGoalEnv(AntEnv, GoalEnv, Serializable):
-    def __init__(self, goal_size=-5, **kwargs):
+    def __init__(self, goals=None, goal_size=-5, **kwargs):
         self.quick_init(locals())
         super().__init__(**kwargs)
+
+        self.goal_idx = 0
+        self.goals = goals
+        if not goals:
+            self.goals = [(0, 0)]
+
         low = - goal_size * np.ones(2)
         high = goal_size * np.ones(2)
 
         self.goal_space = Box(low, high)
         self._goal = None
-        self.goal = self.goal_space.sample()
+        # self.goal = self.goal_space.sample()
         self.observation_space = Dict([
             ('observation', self.observation_space),
             ('desired_goal', self.goal_space),
@@ -113,8 +153,14 @@ class AntXYGoalEnv(AntEnv, GoalEnv, Serializable):
             # trackbodyid=self.sim.model.body_name2id('torso'),
         )
 
+    def step(self, action):
+        obs, rew, done, info = super().step(action)
+        goal_rew = self.compute_reward(obs["desired_goal"], obs["achieved_goal"], info)
+        return obs, goal_rew, done, info
+
     def reset(self):
-        self.goal = self.goal_space.sample()
+        # self.goal = self.goal_space.sample()
+        self.set_goal(self.goal_idx)
         return super().reset()
 
     def _get_obs(self):
@@ -153,6 +199,12 @@ class AntXYGoalEnv(AntEnv, GoalEnv, Serializable):
             (self._goal, np.zeros(1)),
             axis=0,
         )
+
+    def set_goal(self, goal_idx):
+        assert goal_idx >= 0 and goal_idx < len(self.goals), (
+            f"{goal_idx} out of bounds for {len(self.goals)} provided goals")
+        self.goal_idx = goal_idx
+        self.goal = self.goals[goal_idx]
 
     def _goal_site_pos(self):
         site_id = self.sim.model.site_name2id('goal')
@@ -261,3 +313,28 @@ class AntFullPositionGoalEnv(AntEnv, GoalEnv, Serializable):
 
     def viewer_setup(self):
         self.camera_init(self.viewer.cam)
+
+if __name__ == '__main__':
+    env = AntXYGoalEnv(
+        goals=[(3, 3)],
+        random_reset=True,
+        use_low_gear_ratio=True,
+        include_contact_forces_in_state=False,
+        reset_every_n_episodes=float('inf'),
+    )
+    import imageio
+    import skvideo.io
+
+    # imageio.imwrite("./test.png", env.render(mode="rgb_array"))
+    print(env.observation_space)
+    print(env.action_space.low, env.action_space.high)
+
+    frames = []
+    for _ in range(5):
+        env.reset()
+        for _ in range(50):
+            o, r, d, i = env.step(env.action_space.sample())
+            print(r)
+            frames.append(env.render(mode="rgb_array"))
+
+    skvideo.io.vwrite("./test.mp4", frames)

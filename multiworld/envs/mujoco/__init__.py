@@ -5,6 +5,12 @@ import logging
 LOGGER = logging.getLogger(__name__)
 REGISTERED = False
 
+def register_with_eval_env(id="", suffix="Eval", **kwargs):
+    assert "-" in id, "Environment ID must be of the form <domain><task>-<version>"
+    register(id=id, **kwargs)
+    last_idx = id.rfind("-")
+    eval_id = id[:last_idx] + suffix + id[last_idx:]
+    register(id=eval_id, **kwargs)
 
 def register_mujoco_envs():
     global REGISTERED
@@ -677,9 +683,17 @@ def register_classic_mujoco_envs():
             'include_contact_forces_in_state': True
         },
     )
-    register(
+
+    def antxy(**kwargs):
+        from multiworld.envs.mujoco.classic_mujoco.ant import AntXYGoalEnv
+        from multiworld.core.flat_goal_env import FlatGoalEnv
+        env = AntXYGoalEnv(**kwargs)
+        env = FlatGoalEnv(env)
+        return env
+
+    register_with_eval_env(
         id='AntXY-LowGear-NoContactSensors-v0',
-        entry_point='multiworld.envs.mujoco.classic_mujoco.ant:AntXYGoalEnv',
+        entry_point=antxy,
         kwargs={
             'use_low_gear_ratio': True,
             'include_contact_forces_in_state': False
