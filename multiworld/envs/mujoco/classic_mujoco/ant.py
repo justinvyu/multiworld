@@ -63,11 +63,11 @@ class AntEnv(MujocoEnv, Serializable):
             np.square(np.clip(self.sim.data.cfrc_ext, -1, 1)))
         survive_reward = 1.0
         reward = forward_reward - ctrl_cost - contact_cost + survive_reward
-        state = self.state_vector()
-        notdone = (
-                np.isfinite(state).all()
-                and 0.2 <= state[2] <= 1.0
-        )
+        # state = self.state_vector()
+        # notdone = (
+        #         np.isfinite(state).all()
+        #         and 0.2 <= state[2] <= 1.0
+        # )
         # done = not notdone
         done = False
         ob = self._get_obs()
@@ -97,9 +97,22 @@ class AntEnv(MujocoEnv, Serializable):
             self.has_reset = True
             self.sim.reset()
             self.reset_model()
+        else:
+            self.flip_back()
 
         self.reset_count += 1
         return self._get_obs()
+
+    def flip_back(self):
+        state = self.state_vector()
+        flipped = state[2] <= 0.3
+        if flipped:
+            self.sim.reset()
+            qpos = self.init_qpos.copy()
+            qpos[:2] = state[:2]
+            qpos += self.np_random.uniform(size=self.model.nq, low=-.1, high=.1)
+            qvel = self.init_qvel + self.np_random.randn(self.model.nv) * .1
+            self.set_state(qpos, qvel)
 
     @property
     def should_reset(self):
@@ -317,8 +330,8 @@ class AntFullPositionGoalEnv(AntEnv, GoalEnv, Serializable):
 if __name__ == '__main__':
     env = AntXYGoalEnv(
         goals=[(3, 3)],
-        random_reset=True,
-        use_low_gear_ratio=True,
+        random_reset=False,
+        use_low_gear_ratio=False,
         include_contact_forces_in_state=False,
         reset_every_n_episodes=float('inf'),
     )
@@ -332,9 +345,10 @@ if __name__ == '__main__':
     frames = []
     for _ in range(5):
         env.reset()
-        for _ in range(50):
+        for _ in range(100):
             o, r, d, i = env.step(env.action_space.sample())
-            print(r)
+            print(o["observation"][2])
+            # print(d)
             frames.append(env.render(mode="rgb_array"))
 
     skvideo.io.vwrite("./test.mp4", frames)
