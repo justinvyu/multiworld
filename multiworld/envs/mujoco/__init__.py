@@ -47,21 +47,31 @@ def register_canonical_sawyer_envs():
             ),
         )
     )
+
     register(
         id='SawyerDoorOpen-v0',
-        entry_point='multiworld.envs.mujoco.sawyer_xyz'
-                    '.sawyer_door_hook:SawyerDoorHookEnv',
-        kwargs = dict(
-            goal_low=(-0.1, 0.45, 0.1, 0),
-            goal_high=(0.05, 0.65, .25, .83),
-            hand_low=(-0.1, 0.45, 0.1),
-            hand_high=(0.05, 0.65, .25),
-            max_angle=.83,
-            xml_path='sawyer_xyz/sawyer_door_pull_hook.xml',
-            reward_type='angle_diff_and_hand_distance',
-            reset_free=False,
-        )
+        entry_point=sawyer_door_open_v0,
     )
+    register(
+        id='SawyerDoorOpen-v1',
+        entry_point=sawyer_door_open_v1,
+    )
+
+    # register(
+    #     id='SawyerDoorOpen-v0',
+    #     entry_point='multiworld.envs.mujoco.sawyer_xyz'
+    #                 '.sawyer_door_hook:SawyerDoorHookEnv',
+    #     kwargs = dict(
+    #         goal_low=(-0.1, 0.45, 0.1, 0),
+    #         goal_high=(0.05, 0.65, .25, .83),
+    #         hand_low=(-0.1, 0.45, 0.1),
+    #         hand_high=(0.05, 0.65, .25),
+    #         max_angle=.83,
+    #         xml_path='sawyer_xyz/sawyer_door_pull_hook.xml',
+    #         reward_type='angle_diff_and_hand_distance',
+    #         reset_free=False,
+    #     )
+    # )
 
     register(
         id='SawyerPickup-v0',
@@ -77,6 +87,37 @@ def register_canonical_sawyer_envs():
         )
     )
 
+def sawyer_door_open_v0(**kwargs):
+    from multiworld.envs.mujoco.sawyer_xyz.sawyer_door_hook import SawyerDoorHookEnv
+    from multiworld.core.flat_goal_env import FlatGoalEnv
+    env = SawyerDoorHookEnv(
+        goal_low=(-0.1, 0.45, 0.1, 0),
+        goal_high=(0.05, 0.65, .25, .83),
+        hand_low=(-0.1, 0.45, 0.1),
+        hand_high=(0.05, 0.65, .25),
+        max_angle=.83,
+        xml_path='sawyer_xyz/sawyer_door_pull_hook.xml',
+        reward_type='angle_diff_and_hand_distance',
+        reset_free=True,
+    )
+    env = FlatGoalEnv(env, append_goal_to_obs=False)
+    return env
+
+def sawyer_door_open_v1(**kwargs):
+    from multiworld.envs.mujoco.sawyer_xyz.sawyer_door_hook import SawyerDoorHookEnv
+    from multiworld.core.flat_goal_env import FlatGoalEnv
+    env = SawyerDoorHookEnv(
+        goal_low=(-0.1, 0.45, 0.1, 0),
+        goal_high=(0.05, 0.65, .25, .83),
+        hand_low=(-0.1, 0.45, 0.1),
+        hand_high=(0.05, 0.65, .25),
+        max_angle=.83,
+        xml_path='sawyer_xyz/sawyer_door_pull_hook.xml',
+        reward_type='angle_diff_and_hand_distance',
+        reset_free=False,
+    )
+    env = FlatGoalEnv(env, append_goal_to_obs=False)
+    return env
 
 def register_development_sawyer_envs():
     from multiworld.envs.mujoco.cameras import (
